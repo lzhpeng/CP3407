@@ -5,7 +5,7 @@ class User:
         print(f"Chatbot: {response}")
 
 class Chatbot:
-    # other code no change
+#other code no change
 
     def handle_event_query(self, search_function, user_input, query_type):
         if query_type == "date":
@@ -13,4 +13,4 @@ class Chatbot:
                 search_key = datetime.strptime(search_key, "%Y-%m-%d").date().strftime("%Y-%m-%d")
             except ValueError:
                 return "Sorry, the date format you entered is incorrect. Please use the format YYYY-MM-DD."
-        # other code no change
+        # 后续处理代码不变
