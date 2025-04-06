@@ -8,7 +8,7 @@ def generate_icons(input_icon, output_dir):
         
     sizes = [72, 96, 128, 144, 152, 192, 384, 512]
     img = Image.open(input_icon)
-    
+
     for size in sizes:
         resized = img.resize((size, size), Image.LANCZOS)
         output_path = os.path.join(output_dir, f'icon-{size}x{size}.png')

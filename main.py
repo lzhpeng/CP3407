@@ -244,7 +244,7 @@ init_db()
 event_database = EventDatabase()
 chatbot = Chatbot(event_database)
 
-app = FastAPI(title="JCU Event Management System")
+app = FastAPI()
 
 # 确保目录存在
 os.makedirs("static", exist_ok=True)
@@ -351,20 +351,20 @@ class ChatMessage(BaseModel):
     language: str = "zh"
 
 @app.get("/")
-async def root():
-    return FileResponse("templates/chat.html")
+async def root(request: Request):
+    return templates.TemplateResponse("chat.html", {"request": request})
 
 @app.get("/chat")
-async def chat_page():
-    return FileResponse("templates/chat.html")
+async def chat_page(request: Request):
+    return templates.TemplateResponse("chat.html", {"request": request})
 
 @app.get("/login")
-async def login_page():
-    return FileResponse("templates/chat.html")
+async def login_page(request: Request):
+    return templates.TemplateResponse("chat.html", {"request": request})
 
 @app.get("/register")
-async def register_page():
-    return FileResponse("templates/chat.html")
+async def register_page(request: Request):
+    return templates.TemplateResponse("chat.html", {"request": request})
 
 @app.post("/chat")
 async def chat(message: ChatMessage):
