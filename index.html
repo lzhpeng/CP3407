@@ -551,13 +551,16 @@
                         <label for="loginStudentId" class="form-label">学号 | Student ID:</label>
                         <input type="text" class="form-control" id="loginStudentId" 
                                pattern="[0-9]{8}" 
-                               title="请输入8位数字学号 | Please enter 8-digit student ID" 
+                               placeholder="请输入8位数字学号 | Please enter 8-digit student ID"
+                               title="请输入8位数字学号 | Please enter 8-digit student ID"
                                oninput="checkStudentIdStatus(this)"
                                required>
                     </div>
                     <div class="mb-3">
                         <label for="loginPassword" class="form-label">密码 | Password:</label>
-                        <input type="password" class="form-control" id="loginPassword" required>
+                        <input type="password" class="form-control" id="loginPassword"
+                               placeholder="请输入密码 | Please enter your password"
+                               required>
                     </div>
                     <button type="submit" class="btn btn-primary w-100">登录 | Login</button>
                     <div class="mt-3 text-center">
@@ -574,21 +577,32 @@
                 <form id="registerForm" onsubmit="return register(event)">
                     <div class="mb-3">
                         <label for="registerStudentId" class="form-label">学号 | Student ID:</label>
-                        <input type="text" class="form-control" id="registerStudentId" pattern="[0-9]{8}" title="请输入8位数字学号 | Please enter 8-digit student ID" required>
+                        <input type="text" class="form-control" id="registerStudentId"
+                               pattern="[0-9]{8}"
+                               placeholder="请输入8位数字学号 | Please enter 8-digit student ID"
+                               title="请输入8位数字学号 | Please enter 8-digit student ID"
+                               required>
                     </div>
                     <div class="mb-3">
                         <label for="registerEmail" class="form-label">邮箱 | Email:</label>
-                        <input type="email" class="form-control" id="registerEmail" required pattern=".*@my\.jcu\.edu\.au$" title="请使用JCU邮箱 (@my.jcu.edu.au) | Please use JCU email (@my.jcu.edu.au)">
+                        <input type="email" class="form-control" id="registerEmail"
+                               placeholder="请输入JCU邮箱 (例如: student@my.jcu.edu.au) | Please enter JCU email"
+                               required pattern=".*@my\.jcu\.edu\.au$"
+                               title="请使用JCU邮箱 (@my.jcu.edu.au) | Please use JCU email (@my.jcu.edu.au)">
                     </div>
                     <div class="mb-3">
                         <label for="registerPassword" class="form-label">密码 | Password:</label>
-                        <input type="password" class="form-control" id="registerPassword" 
+                        <input type="password" class="form-control" id="registerPassword"
                                minlength="8"
-                               required title="密码必须包含大小写字母和数字 | Password must contain uppercase, lowercase letters and numbers">
+                               placeholder="至少8个字符，包含大小写字母和数字 | Min 8 chars, with upper, lower & numbers"
+                               required
+                               title="密码必须包含大小写字母和数字 | Password must contain uppercase, lowercase letters and numbers">
                     </div>
                     <div class="mb-3">
                         <label for="confirmPassword" class="form-label">确认密码 | Confirm Password:</label>
-                        <input type="password" class="form-control" id="confirmPassword" required>
+                        <input type="password" class="form-control" id="confirmPassword"
+                               placeholder="请再次输入密码 | Please re-enter your password"
+                               required>
                     </div>
                     <button type="submit" class="btn btn-primary w-100">注册 | Register</button>
                     <div class="mt-3 text-center">
