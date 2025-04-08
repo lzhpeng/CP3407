@@ -312,6 +312,9 @@
             }
 
             localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(user));
+            // 清空聊天记录并显示新的欢迎消息
+            const chatMessages = document.getElementById('chatMessages');
+            chatMessages.innerHTML = '';
             showChatSection();
         }
 
@@ -537,6 +540,11 @@
         // 页面加载完成后检查登录状态
         document.addEventListener('DOMContentLoaded', () => {
             checkAuth();
+            // 初始化所有tooltips
+            var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+            var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl);
+            });
         });
     </script>
 </head>
@@ -551,15 +559,17 @@
                         <label for="loginStudentId" class="form-label">学号 | Student ID:</label>
                         <input type="text" class="form-control" id="loginStudentId"
                                pattern="[0-9]{8}"
-                               placeholder="请输入8位数字学号 | Please enter 8-digit student ID"
+                               data-bs-toggle="tooltip"
+                               data-bs-placement="top"
                                title="请输入8位数字学号 | Please enter 8-digit student ID"
-                               oninput="checkStudentIdStatus(this)"
                                required>
                     </div>
                     <div class="mb-3">
                         <label for="loginPassword" class="form-label">密码 | Password:</label>
                         <input type="password" class="form-control" id="loginPassword"
-                               placeholder="请输入密码 | Please enter your password"
+                               data-bs-toggle="tooltip"
+                               data-bs-placement="top"
+                               title="请输入密码 | Please enter your password"
                                required>
                     </div>
                     <button type="submit" class="btn btn-primary w-100">登录 | Login</button>
@@ -579,29 +589,34 @@
                         <label for="registerStudentId" class="form-label">学号 | Student ID:</label>
                         <input type="text" class="form-control" id="registerStudentId"
                                pattern="[0-9]{8}"
-                               placeholder="请输入8位数字学号 | Please enter 8-digit student ID"
+                               data-bs-toggle="tooltip"
+                               data-bs-placement="top"
                                title="请输入8位数字学号 | Please enter 8-digit student ID"
                                required>
                     </div>
                     <div class="mb-3">
                         <label for="registerEmail" class="form-label">邮箱 | Email:</label>
                         <input type="email" class="form-control" id="registerEmail"
-                               placeholder="请输入JCU邮箱 (例如: student@my.jcu.edu.au) | Please enter JCU email"
-                               required pattern=".*@my\.jcu\.edu\.au$"
-                               title="请使用JCU邮箱 (@my.jcu.edu.au) | Please use JCU email (@my.jcu.edu.au)">
+                               data-bs-toggle="tooltip"
+                               data-bs-placement="top"
+                               title="请输入JCU邮箱 (例如: student@my.jcu.edu.au) | Please enter JCU email"
+                               required pattern=".*@my\.jcu\.edu\.au$">
                     </div>
                     <div class="mb-3">
                         <label for="registerPassword" class="form-label">密码 | Password:</label>
                         <input type="password" class="form-control" id="registerPassword"
                                minlength="8"
-                               placeholder="至少8个字符，包含大小写字母和数字 | Min 8 chars, with upper, lower & numbers"
-                               required
-                               title="密码必须包含大小写字母和数字 | Password must contain uppercase, lowercase letters and numbers">
+                               data-bs-toggle="tooltip"
+                               data-bs-placement="top"
+                               title="至少8个字符，包含大小写字母和数字 | Min 8 chars, with upper, lower & numbers"
+                               required>
                     </div>
                     <div class="mb-3">
                         <label for="registerConfirmPassword" class="form-label">确认密码 | Confirm Password:</label>
                         <input type="password" class="form-control" id="registerConfirmPassword"
-                               placeholder="请再次输入密码 | Please re-enter your password"
+                               data-bs-toggle="tooltip"
+                               data-bs-placement="top"
+                               title="请再次输入密码 | Please re-enter your password"
                                required>
                     </div>
                     <button type="submit" class="btn btn-primary w-100">注册 | Register</button>
@@ -628,7 +643,11 @@
             <div class="chat-input">
                 <form id="chatForm" onsubmit="return sendMessage(event)">
                     <div class="input-group">
-                        <input type="text" class="form-control" id="messageInput" placeholder="请输入您的问题... | Enter your question..." required>
+                        <input type="text" class="form-control" id="messageInput"
+                               data-bs-toggle="tooltip"
+                               data-bs-placement="top"
+                               title="请输入您的问题 | Enter your question"
+                               required>
                         <button type="submit" class="btn btn-primary">发送 | Send</button>
                     </div>
                 </form>
