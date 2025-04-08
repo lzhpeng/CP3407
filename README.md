@@ -1,9 +1,9 @@
 CP3407 Group 4
 
-##Group members:##
+## Group members:
 
-#Li Zhipeng
+# Li Zhipeng
 
-#Jiang zhonghao
+# Jiang zhonghao
 
-#Zhang yiwen
+# Zhang yiwen
