@@ -242,6 +242,7 @@
         function checkStudentIdStatus(inputElement) {
             const studentId = inputElement.value;
             const feedbackDiv = inputElement.nextElementSibling;
+            const users = getUsers();
             
             // 如果还没有输入完8位数字，不显示任何提示
             if (studentId.length !== 8) {
@@ -251,28 +252,46 @@
                 return;
             }
 
-            // 检查学号是否已注册
-            const user = findUser(studentId);
-            
-            // 移除旧的提示（如果存在）
+            // 创建或更新反馈信息div
+            let feedback;
             if (feedbackDiv && feedbackDiv.classList.contains('student-id-feedback')) {
-                feedbackDiv.remove();
-            }
-
-            // 创建新的提示元素
-            const newFeedback = document.createElement('div');
-            newFeedback.className = 'student-id-feedback mt-1 small';
-            
-            if (user) {
-                newFeedback.className += ' text-success';
-                newFeedback.textContent = '✓ 该学号已注册，请输入密码登录 | This student ID is registered';
+                feedback = feedbackDiv;
             } else {
-                newFeedback.className += ' text-danger';
-                newFeedback.textContent = '✗ 该学号未注册，请先注册账号 | This student ID is not registered';
+                feedback = document.createElement('div');
+                feedback.className = 'student-id-feedback';
+                inputElement.parentNode.insertBefore(feedback, inputElement.nextSibling);
             }
 
-            // 添加新的提示
-            inputElement.parentNode.appendChild(newFeedback);
+            // 检查学号格式
+            if (!/^\d{8}$/.test(studentId)) {
+                feedback.className = 'student-id-feedback text-danger';
+                feedback.textContent = '学号必须是8位数字 | Student ID must be 8 digits';
+                return;
+            }
+
+            // 检查学号是否已注册
+            const isRegistered = users.some(user => user.username === studentId);
+            
+            // 根据不同场景显示不同提示
+            if (inputElement.id === 'registerStudentId') {
+                // 注册页面
+                if (isRegistered) {
+                    feedback.className = 'student-id-feedback text-danger';
+                    feedback.textContent = '该学号已注册 | This student ID is already registered';
+                } else {
+                    feedback.className = 'student-id-feedback text-success';
+                    feedback.textContent = '该学号可以注册 | This student ID is available';
+                }
+            } else {
+                // 登录页面
+                if (!isRegistered) {
+                    feedback.className = 'student-id-feedback text-danger';
+                    feedback.textContent = '该学号未注册，请先注册账号 | This student ID is not registered. Please register first.';
+                } else {
+                    feedback.className = 'student-id-feedback text-success';
+                    feedback.textContent = '学号格式正确 | Student ID format is correct';
+                }
+            }
         }
 
         // 保存用户
