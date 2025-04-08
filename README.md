@@ -1,3 +1,4 @@
+# can click https://lzhpeng.github.io/CP3407-group4/ to go to web
 # JCU Campus Assistant | JCU校园助手
 
 A bilingual chatbot assistant for JCU students, providing information about campus facilities, courses, and services.
