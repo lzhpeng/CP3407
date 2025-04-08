@@ -197,12 +197,38 @@
     <script>
         // 用户数据存储
         const USERS_KEY = 'jcu_users';
-        const CURRENT_USER_KEY = 'jcu_current_user';
+        let users = [];
+        let currentUser = null;
         
-        // 初始化用户存储
-        if (!localStorage.getItem(USERS_KEY)) {
-            localStorage.setItem(USERS_KEY, JSON.stringify([]));
+        // 从localStorage加载用户数据
+        function loadUsers() {
+            try {
+                const savedUsers = localStorage.getItem(USERS_KEY);
+                if (savedUsers) {
+                    users = JSON.parse(savedUsers);
+                } else {
+                    users = [];
+                    saveUsers(); // 初始化空的用户列表
+                }
+            } catch (error) {
+                console.error('加载用户数据失败:', error);
+                users = [];
+                saveUsers();
+            }
         }
+
+        // 保存用户数据到localStorage
+        function saveUsers() {
+            try {
+                localStorage.setItem(USERS_KEY, JSON.stringify(users));
+            } catch (error) {
+                console.error('保存用户数据失败:', error);
+                alert('保存用户数据失败，请检查浏览器存储空间');
+            }
+        }
+
+        // 页面加载时读取用户数据
+        window.addEventListener('load', loadUsers);
 
         let currentLanguage = 'zh';
 
@@ -235,14 +261,13 @@
 
         // 获取所有用户
         function getUsers() {
-            return JSON.parse(localStorage.getItem(USERS_KEY) || '[]');
+            return users;
         }
 
         // 检查学号状态并显示提示
         function checkStudentIdStatus(inputElement) {
             const studentId = inputElement.value;
             const feedbackDiv = inputElement.nextElementSibling;
-            const users = getUsers();
             
             // 如果还没有输入完8位数字，不显示任何提示
             if (studentId.length !== 8) {
@@ -270,7 +295,7 @@
             }
 
             // 检查学号是否已注册
-            const isRegistered = users.some(user => user.username === studentId);
+            const isRegistered = users.some(user => user.studentId === studentId);
             
             // 根据不同场景显示不同提示
             if (inputElement.id === 'registerStudentId') {
@@ -298,7 +323,6 @@
         function checkEmailStatus(inputElement) {
             const email = inputElement.value;
             const feedbackDiv = inputElement.nextElementSibling;
-            const users = getUsers();
             
             // 创建或更新反馈信息div
             let feedback;
@@ -328,131 +352,66 @@
             }
         }
 
-        // 保存用户
-        function saveUser(user) {
-            const users = getUsers();
-            users.push(user);
-            localStorage.setItem(USERS_KEY, JSON.stringify(users));
-        }
-
-        // 查找用户
-        function findUser(studentId) {
-            const users = getUsers();
-            return users.find(u => u.username === studentId);
-        }
-
-        // 登录处理
-        async function login(event) {
-            event.preventDefault();
+        // 处理登录
+        function handleLogin() {
             const studentId = document.getElementById('loginStudentId').value;
             const password = document.getElementById('loginPassword').value;
 
-            const user = findUser(studentId);
-            if (!user) {
-                showError(
-                    '该学号未注册，请先注册账号',
-                    'This student ID is not registered. Please register first.'
-                );
-                return;
+            const user = users.find(u => u.studentId === studentId && u.password === password);
+            
+            if (user) {
+                currentUser = user;
+                // 清空聊天记录并显示新的欢迎消息
+                const chatMessages = document.getElementById('chatMessages');
+                chatMessages.innerHTML = '';
+                showChatSection();
+            } else {
+                showError('学号或密码错误', 'Invalid student ID or password');
             }
-
-            if (user.password !== password) {
-                showError(
-                    '密码错误',
-                    'Incorrect password'
-                );
-                return;
-            }
-
-            localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(user));
-            // 清空聊天记录并显示新的欢迎消息
-            const chatMessages = document.getElementById('chatMessages');
-            chatMessages.innerHTML = '';
-            showChatSection();
         }
 
-        // 验证密码复杂度
-        function validatePassword(password) {
-            if (password.length < 8) return false;
-            if (!/[A-Z]/.test(password)) return false;
-            if (!/[a-z]/.test(password)) return false;
-            if (!/[0-9]/.test(password)) return false;
-            return true;
-        }
-
-        // 注册处理
-        async function register(event) {
-            event.preventDefault();
+        // 处理注册
+        function handleRegister() {
             const studentId = document.getElementById('registerStudentId').value;
             const email = document.getElementById('registerEmail').value;
             const password = document.getElementById('registerPassword').value;
             const confirmPassword = document.getElementById('registerConfirmPassword').value;
 
             // 验证密码
-            if (!validatePassword(password)) {
-                showError(
-                    '密码必须包含至少8个字符，包括大写字母、小写字母和数字',
-                    'Password must contain at least 8 characters, including uppercase letters, lowercase letters, and numbers'
-                );
-                return;
-            }
-
             if (password !== confirmPassword) {
-                showError(
-                    '两次输入的密码不匹配',
-                    'Passwords do not match'
-                );
+                showError('两次输入的密码不一致', 'Passwords do not match');
                 return;
             }
 
-            // 验证邮箱格式
-            if (!email.endsWith('@my.jcu.edu.au')) {
-                showError(
-                    '请使用JCU邮箱',
-                    'Please use a JCU email address'
-                );
+            // 验证学号是否已注册
+            if (users.some(user => user.studentId === studentId)) {
+                showError('该学号已注册', 'This student ID is already registered');
                 return;
             }
 
-            // 检查用户是否已存在
-            if (findUser(studentId)) {
-                showError(
-                    '该学号已被注册',
-                    'This student ID is already registered'
-                );
+            // 验证邮箱是否已使用
+            if (users.some(user => user.email === email)) {
+                showError('该邮箱已被使用', 'This email is already in use');
                 return;
             }
 
-            // 保存用户
+            // 创建新用户
             const newUser = {
-                username: studentId,
-                email: email,
-                password: password,
-                createdAt: new Date().toISOString()
+                studentId,
+                email,
+                password
             };
 
-            saveUser(newUser);
-            showError(
-                '注册成功！请登录',
-                'Registration successful! Please login'
-            );
-            showLoginSection();
+            users.push(newUser);
+            saveUsers(); // 保存到localStorage
+            currentUser = newUser;
+            showChatSection();
         }
 
-        // 退出登录
-        function logout() {
-            localStorage.removeItem(CURRENT_USER_KEY);
+        // 处理登出
+        function handleLogout() {
+            currentUser = null;
             showLoginSection();
-        }
-
-        // 检查是否已登录
-        function checkAuth() {
-            const currentUser = localStorage.getItem(CURRENT_USER_KEY);
-            if (currentUser) {
-                showChatSection();
-            } else {
-                showLoginSection();
-            }
         }
 
         // 模拟聊天回复
@@ -607,7 +566,7 @@
         <div id="loginSection" class="auth-section">
             <div class="auth-container">
                 <h2>登录 | Login</h2>
-                <form id="loginForm" onsubmit="return login(event)">
+                <form id="loginForm" onsubmit="return handleLogin()">
                     <div class="mb-3">
                         <label for="loginStudentId" class="form-label">学号 | Student ID:</label>
                         <input type="text" class="form-control" id="loginStudentId" 
@@ -638,7 +597,7 @@
         <div id="registerSection" class="auth-section d-none">
             <div class="auth-container">
                 <h2>注册 | Register</h2>
-                <form id="registerForm" onsubmit="return register(event)">
+                <form id="registerForm" onsubmit="return handleRegister()">
                     <div class="mb-3">
                         <label for="registerStudentId" class="form-label">学号 | Student ID:</label>
                         <input type="text" class="form-control" id="registerStudentId" 
@@ -690,7 +649,7 @@
                 <div class="header-actions">
                     <button class="btn btn-outline-light btn-sm" id="clearChat" onclick="clearChat()">清空聊天 | Clear Chat</button>
                     <button class="btn btn-outline-light btn-sm" id="langButton" onclick="toggleLanguage()">English</button>
-                    <button class="btn btn-outline-light btn-sm" onclick="logout()">退出登录 | Logout</button>
+                    <button class="btn btn-outline-light btn-sm" onclick="handleLogout()">退出登录 | Logout</button>
                 </div>
             </div>
             <div class="chat-messages" id="chatMessages">
