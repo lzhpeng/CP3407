@@ -1,7 +1,5 @@
 # JCU校园助手 | JCU Campus Assistant
 
-一个简单的网页应用，帮助 JCU 学生获取校园信息。
-
 访问网站 | Visit Website: [https://lzhpeng.github.io/CP3407-group4/](https://lzhpeng.github.io/CP3407-group4/) 👈👈
 
 ## 功能特点 | Features
