@@ -330,7 +330,7 @@
             const studentId = document.getElementById('registerStudentId').value;
             const email = document.getElementById('registerEmail').value;
             const password = document.getElementById('registerPassword').value;
-            const confirmPassword = document.getElementById('confirmPassword').value;
+            const confirmPassword = document.getElementById('registerConfirmPassword').value;
 
             // 验证密码
             if (!validatePassword(password)) {
@@ -374,7 +374,7 @@
                 password: password,
                 createdAt: new Date().toISOString()
             };
-            
+
             saveUser(newUser);
             showError(
                 '注册成功！请登录',
@@ -420,7 +420,7 @@
             event.preventDefault();
             const messageInput = document.getElementById('messageInput');
             const message = messageInput.value.trim();
-            
+
             if (!message) return;
 
             // 显示用户消息
@@ -429,8 +429,8 @@
 
             // 获取回复
             const responses = chatResponses[currentLanguage];
-            let response = responses[message] || (currentLanguage === 'zh' ? 
-                '抱歉，我不太理解您的问题。请尝试从下面的选项中选择：' : 
+            let response = responses[message] || (currentLanguage === 'zh' ?
+                '抱歉，我不太理解您的问题。请尝试从下面的选项中选择：' :
                 'Sorry, I don\'t quite understand. Please try selecting from the options below:');
 
             // 添加机器人回复
@@ -447,18 +447,18 @@
             const chatMessages = document.getElementById('chatMessages');
             const messageDiv = document.createElement('div');
             messageDiv.className = `message ${type}`;
-            
+
             if (typeof message === 'object') {
                 if (message.main_response) {
                     const mainResponseDiv = document.createElement('div');
                     mainResponseDiv.textContent = message.main_response;
                     messageDiv.appendChild(mainResponseDiv);
                 }
-                
+
                 if (message.follow_up_questions && message.follow_up_questions.length > 0) {
                     const followUpDiv = document.createElement('div');
                     followUpDiv.className = 'follow-up';
-                    followUpDiv.innerHTML = message.follow_up_questions.map(q => 
+                    followUpDiv.innerHTML = message.follow_up_questions.map(q =>
                         `<button class="btn btn-link" onclick="handleFollowUp('${encodeURIComponent(q)}')">${escapeHtml(q)}</button>`
                     ).join('<br>');
                     messageDiv.appendChild(followUpDiv);
@@ -466,7 +466,7 @@
             } else {
                 messageDiv.textContent = message;
             }
-            
+
             chatMessages.appendChild(messageDiv);
             chatMessages.scrollTop = chatMessages.scrollHeight;
         }
@@ -485,7 +485,7 @@
         function toggleLanguage() {
             const langButton = document.getElementById('langButton');
             const messageInput = document.getElementById('messageInput');
-            
+
             if (currentLanguage === 'zh') {
                 currentLanguage = 'en';
                 langButton.textContent = '中文';
@@ -549,8 +549,8 @@
                 <form id="loginForm" onsubmit="return login(event)">
                     <div class="mb-3">
                         <label for="loginStudentId" class="form-label">学号 | Student ID:</label>
-                        <input type="text" class="form-control" id="loginStudentId" 
-                               pattern="[0-9]{8}" 
+                        <input type="text" class="form-control" id="loginStudentId"
+                               pattern="[0-9]{8}"
                                placeholder="请输入8位数字学号 | Please enter 8-digit student ID"
                                title="请输入8位数字学号 | Please enter 8-digit student ID"
                                oninput="checkStudentIdStatus(this)"
@@ -599,8 +599,8 @@
                                title="密码必须包含大小写字母和数字 | Password must contain uppercase, lowercase letters and numbers">
                     </div>
                     <div class="mb-3">
-                        <label for="confirmPassword" class="form-label">确认密码 | Confirm Password:</label>
-                        <input type="password" class="form-control" id="confirmPassword"
+                        <label for="registerConfirmPassword" class="form-label">确认密码 | Confirm Password:</label>
+                        <input type="password" class="form-control" id="registerConfirmPassword"
                                placeholder="请再次输入密码 | Please re-enter your password"
                                required>
                     </div>
