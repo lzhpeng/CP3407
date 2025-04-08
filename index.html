@@ -277,20 +277,54 @@
                 // 注册页面
                 if (isRegistered) {
                     feedback.className = 'student-id-feedback text-danger';
-                    feedback.textContent = '该学号已注册 | This student ID is already registered';
+                    feedback.textContent = '✗ 该学号已被注册，请直接登录 | This student ID is already registered, please login';
                 } else {
                     feedback.className = 'student-id-feedback text-success';
-                    feedback.textContent = '该学号可以注册 | This student ID is available';
+                    feedback.textContent = '✓ 该学号可以注册 | This student ID is available for registration';
                 }
             } else {
                 // 登录页面
                 if (!isRegistered) {
                     feedback.className = 'student-id-feedback text-danger';
-                    feedback.textContent = '该学号未注册，请先注册账号 | This student ID is not registered. Please register first.';
+                    feedback.textContent = '✗ 该学号未注册，请先注册账号 | This student ID is not registered, please register first';
                 } else {
                     feedback.className = 'student-id-feedback text-success';
-                    feedback.textContent = '学号格式正确 | Student ID format is correct';
+                    feedback.textContent = '✓ 该学号已注册，请输入密码 | Student ID found, please enter your password';
                 }
+            }
+        }
+
+        // 检查邮箱状态并显示提示
+        function checkEmailStatus(inputElement) {
+            const email = inputElement.value;
+            const feedbackDiv = inputElement.nextElementSibling;
+            const users = getUsers();
+            
+            // 创建或更新反馈信息div
+            let feedback;
+            if (feedbackDiv && feedbackDiv.classList.contains('student-id-feedback')) {
+                feedback = feedbackDiv;
+            } else {
+                feedback = document.createElement('div');
+                feedback.className = 'student-id-feedback';
+                inputElement.parentNode.insertBefore(feedback, inputElement.nextSibling);
+            }
+
+            // 检查邮箱格式
+            if (!email.endsWith('@my.jcu.edu.au')) {
+                feedback.className = 'student-id-feedback text-danger';
+                feedback.textContent = '✗ 请使用JCU邮箱（@my.jcu.edu.au） | Please use JCU email (@my.jcu.edu.au)';
+                return;
+            }
+
+            // 检查邮箱是否已被使用
+            const isEmailUsed = users.some(user => user.email === email);
+            if (isEmailUsed) {
+                feedback.className = 'student-id-feedback text-danger';
+                feedback.textContent = '✗ 该邮箱已被使用 | This email is already in use';
+            } else {
+                feedback.className = 'student-id-feedback text-success';
+                feedback.textContent = '✓ 该邮箱可以使用 | This email is available';
             }
         }
 
@@ -621,6 +655,7 @@
                                data-bs-toggle="tooltip"
                                data-bs-placement="top"
                                title="请输入JCU邮箱 (例如: student@my.jcu.edu.au) | Please enter JCU email"
+                               oninput="checkEmailStatus(this)"
                                required pattern=".*@my\.jcu\.edu\.au$">
                     </div>
                     <div class="mb-3">
