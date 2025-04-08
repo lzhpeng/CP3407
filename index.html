@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JCU校园助手 | JCU Campus Assistant</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Microsoft YaHei', sans-serif;
+            background-color: #f5f5f5;
+            margin: 0;
+            padding: 20px;
+            height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            height: 100%;
+        }
+
+        /* 认证界面样式 */
+        .auth-section {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100%;
+        }
+
+        .auth-container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 400px;
+        }
+
+        .auth-container h2 {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #333;
+        }
+
+        /* 聊天界面样式 */
+        .chat-container {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        .chat-header {
+            background: #007bff;
+            color: white;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .chat-header h1 {
+            margin: 0;
+            font-size: 1.5rem;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .header-actions button {
+            transition: all 0.3s ease;
+        }
+
+        .header-actions button:hover {
+            transform: scale(1.05);
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+
+        #clearChat {
+            background-color: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+
+        #clearChat:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+            border-color: rgba(255, 255, 255, 0.5);
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+        }
+
+        .message {
+            margin-bottom: 15px;
+            padding: 10px 15px;
+            border-radius: 10px;
+            max-width: 80%;
+        }
+
+        .message.bot {
+            background: #f0f2f5;
+            margin-right: auto;
+        }
+
+        .message.user {
+            background: #007bff;
+            color: white;
+            margin-left: auto;
+        }
+
+        .message.follow-up {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 15px;
+        }
+
+        .follow-up button {
+            color: #007bff;
+            padding: 0;
+            text-align: left;
+        }
+
+        .chat-input {
+            padding: 20px;
+            background: #f8f9fa;
+            border-top: 1px solid #dee2e6;
+        }
+
+        .chat-input .input-group {
+            max-width: 100%;
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+
+            .message {
+                max-width: 90%;
+            }
+        }
+
+        /* 工具类 */
+        .d-none {
+            display: none !important;
+        }
+
+        /* 滚动条样式 */
+        .chat-messages::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .chat-messages::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+
+        .chat-messages::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 3px;
+        }
+
+        .chat-messages::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+
+        .student-id-feedback {
+            font-size: 0.875rem;
+            margin-top: 0.25rem;
+        }
+        .text-success {
+            color: #198754;
+        }
+        .text-danger {
+            color: #dc3545;
+        }
+    </style>
+    
+    <!-- PWA支持 -->
+    <link rel="manifest" href="/static/manifest.json">
+    <meta name="theme-color" content="#007bff">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <meta name="apple-mobile-web-app-title" content="JCU助手">
+    <link rel="apple-touch-icon" href="/static/icons/icon-152x152.png">
+    
+    <script>
+        // 用户数据存储
+        const USERS_KEY = 'jcu_users';
+        const CURRENT_USER_KEY = 'jcu_current_user';
+        
+        // 初始化用户存储
+        if (!localStorage.getItem(USERS_KEY)) {
+            localStorage.setItem(USERS_KEY, JSON.stringify([]));
+        }
+
+        let currentLanguage = 'zh';
+
+        // 显示登录界面
+        function showLoginSection() {
+            document.getElementById('registerSection').classList.add('d-none');
+            document.getElementById('loginSection').classList.remove('d-none');
+            document.getElementById('chatSection').classList.add('d-none');
+        }
+
+        // 显示注册界面
+        function showRegisterSection() {
+            document.getElementById('loginSection').classList.add('d-none');
+            document.getElementById('registerSection').classList.remove('d-none');
+            document.getElementById('chatSection').classList.add('d-none');
+        }
+
+        // 显示聊天界面
+        function showChatSection() {
+            document.getElementById('loginSection').classList.add('d-none');
+            document.getElementById('registerSection').classList.add('d-none');
+            document.getElementById('chatSection').classList.remove('d-none');
+            showWelcomeMessage();
+        }
+
+        // 显示错误消息
+        function showError(zhMessage, enMessage) {
+            alert(`${zhMessage}\n${enMessage}`);
+        }
+
+        // 获取所有用户
+        function getUsers() {
+            return JSON.parse(localStorage.getItem(USERS_KEY) || '[]');
+        }
+
+        // 检查学号状态并显示提示
+        function checkStudentIdStatus(inputElement) {
+            const studentId = inputElement.value;
+            const feedbackDiv = inputElement.nextElementSibling;
+            
+            // 如果还没有输入完8位数字，不显示任何提示
+            if (studentId.length !== 8) {
+                if (feedbackDiv && feedbackDiv.classList.contains('student-id-feedback')) {
+                    feedbackDiv.remove();
+                }
+                return;
+            }
+
+            // 检查学号是否已注册
+            const user = findUser(studentId);
+            
+            // 移除旧的提示（如果存在）
+            if (feedbackDiv && feedbackDiv.classList.contains('student-id-feedback')) {
+                feedbackDiv.remove();
+            }
+
+            // 创建新的提示元素
+            const newFeedback = document.createElement('div');
+            newFeedback.className = 'student-id-feedback mt-1 small';
+            
+            if (user) {
+                newFeedback.className += ' text-success';
+                newFeedback.textContent = '✓ 该学号已注册，请输入密码登录 | This student ID is registered';
+            } else {
+                newFeedback.className += ' text-danger';
+                newFeedback.textContent = '✗ 该学号未注册，请先注册账号 | This student ID is not registered';
+            }
+
+            // 添加新的提示
+            inputElement.parentNode.appendChild(newFeedback);
+        }
+
+        // 保存用户
+        function saveUser(user) {
+            const users = getUsers();
+            users.push(user);
+            localStorage.setItem(USERS_KEY, JSON.stringify(users));
+        }
+
+        // 查找用户
+        function findUser(studentId) {
+            const users = getUsers();
+            return users.find(u => u.username === studentId);
+        }
+
+        // 登录处理
+        async function login(event) {
+            event.preventDefault();
+            const studentId = document.getElementById('loginStudentId').value;
+            const password = document.getElementById('loginPassword').value;
+
+            const user = findUser(studentId);
+            if (!user) {
+                showError(
+                    '该学号未注册，请先注册账号',
+                    'This student ID is not registered. Please register first.'
+                );
+                return;
+            }
+
+            if (user.password !== password) {
+                showError(
+                    '密码错误',
+                    'Incorrect password'
+                );
+                return;
+            }
+
+            localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(user));
+            showChatSection();
+        }
+
+        // 验证密码复杂度
+        function validatePassword(password) {
+            if (password.length < 8) return false;
+            if (!/[A-Z]/.test(password)) return false;
+            if (!/[a-z]/.test(password)) return false;
+            if (!/[0-9]/.test(password)) return false;
+            return true;
+        }
+
+        // 注册处理
+        async function register(event) {
+            event.preventDefault();
+            const studentId = document.getElementById('registerStudentId').value;
+            const email = document.getElementById('registerEmail').value;
+            const password = document.getElementById('registerPassword').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+
+            // 验证密码
+            if (!validatePassword(password)) {
+                showError(
+                    '密码必须包含至少8个字符，包括大写字母、小写字母和数字',
+                    'Password must contain at least 8 characters, including uppercase letters, lowercase letters, and numbers'
+                );
+                return;
+            }
+
+            if (password !== confirmPassword) {
+                showError(
+                    '两次输入的密码不匹配',
+                    'Passwords do not match'
+                );
+                return;
+            }
+
+            // 验证邮箱格式
+            if (!email.endsWith('@my.jcu.edu.au')) {
+                showError(
+                    '请使用JCU邮箱',
+                    'Please use a JCU email address'
+                );
+                return;
+            }
+
+            // 检查用户是否已存在
+            if (findUser(studentId)) {
+                showError(
+                    '该学号已被注册',
+                    'This student ID is already registered'
+                );
+                return;
+            }
+
+            // 保存用户
+            const newUser = {
+                username: studentId,
+                email: email,
+                password: password,
+                createdAt: new Date().toISOString()
+            };
+            
+            saveUser(newUser);
+            showError(
+                '注册成功！请登录',
+                'Registration successful! Please login'
+            );
+            showLoginSection();
+        }
+
+        // 退出登录
+        function logout() {
+            localStorage.removeItem(CURRENT_USER_KEY);
+            showLoginSection();
+        }
+
+        // 检查是否已登录
+        function checkAuth() {
+            const currentUser = localStorage.getItem(CURRENT_USER_KEY);
+            if (currentUser) {
+                showChatSection();
+            } else {
+                showLoginSection();
+            }
+        }
+
+        // 模拟聊天回复
+        const chatResponses = {
+            zh: {
+                '校园设施和开放时间': '图书馆开放时间：周一至周五 8:00-22:00\n健身房开放时间：周一至周日 6:00-22:00\n游泳池开放时间：周一至周日 6:00-20:00',
+                '课程和专业信息': '我们提供以下专业：\n- 信息技术\n- 商业管理\n- 护理学\n- 教育学\n详细信息请访问JCU官网',
+                '学生服务和支持': '学生服务中心位于主楼一层，提供以下服务：\n- 学习支持\n- 心理咨询\n- 职业规划\n- 签证咨询',
+                '校历和重要日期': '2024学年重要日期：\n- 开学日：2月26日\n- 期中考试：4月15-26日\n- 期末考试：6月10-21日'
+            },
+            en: {
+                'Campus facilities and opening hours': 'Library: Mon-Fri 8:00-22:00\nGym: Mon-Sun 6:00-22:00\nSwimming Pool: Mon-Sun 6:00-20:00',
+                'Courses and program information': 'We offer the following programs:\n- Information Technology\n- Business Management\n- Nursing\n- Education\nFor details, please visit JCU website',
+                'Student services and support': 'Student Service Center (Main Building, 1st Floor) provides:\n- Learning Support\n- Counseling\n- Career Planning\n- Visa Consultation',
+                'Academic calendar and important dates': '2024 Academic Year:\n- Start: Feb 26\n- Mid-term Exams: Apr 15-26\n- Final Exams: Jun 10-21'
+            }
+        };
+
+        // 发送消息
+        async function sendMessage(event) {
+            event.preventDefault();
+            const messageInput = document.getElementById('messageInput');
+            const message = messageInput.value.trim();
+            
+            if (!message) return;
+
+            // 显示用户消息
+            addMessage(message, 'user');
+            messageInput.value = '';
+
+            // 获取回复
+            const responses = chatResponses[currentLanguage];
+            let response = responses[message] || (currentLanguage === 'zh' ? 
+                '抱歉，我不太理解您的问题。请尝试从下面的选项中选择：' : 
+                'Sorry, I don\'t quite understand. Please try selecting from the options below:');
+
+            // 添加机器人回复
+            setTimeout(() => {
+                addMessage({
+                    main_response: response,
+                    follow_up_questions: Object.keys(responses)
+                });
+            }, 500);
+        }
+
+        // 添加消息到聊天界面
+        function addMessage(message, type = 'bot') {
+            const chatMessages = document.getElementById('chatMessages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${type}`;
+            
+            if (typeof message === 'object') {
+                if (message.main_response) {
+                    const mainResponseDiv = document.createElement('div');
+                    mainResponseDiv.textContent = message.main_response;
+                    messageDiv.appendChild(mainResponseDiv);
+                }
+                
+                if (message.follow_up_questions && message.follow_up_questions.length > 0) {
+                    const followUpDiv = document.createElement('div');
+                    followUpDiv.className = 'follow-up';
+                    followUpDiv.innerHTML = message.follow_up_questions.map(q => 
+                        `<button class="btn btn-link" onclick="handleFollowUp('${encodeURIComponent(q)}')">${escapeHtml(q)}</button>`
+                    ).join('<br>');
+                    messageDiv.appendChild(followUpDiv);
+                }
+            } else {
+                messageDiv.textContent = message;
+            }
+            
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        // HTML转义函数
+        function escapeHtml(unsafe) {
+            return unsafe
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+
+        // 切换语言
+        function toggleLanguage() {
+            const langButton = document.getElementById('langButton');
+            const messageInput = document.getElementById('messageInput');
+            
+            if (currentLanguage === 'zh') {
+                currentLanguage = 'en';
+                langButton.textContent = '中文';
+                messageInput.placeholder = 'Enter your question...';
+                addMessage({
+                    main_response: "Switched to English mode. Please ask in English, I will respond in English.",
+                    follow_up_questions: Object.keys(chatResponses.en)
+                });
+            } else {
+                currentLanguage = 'zh';
+                langButton.textContent = 'English';
+                messageInput.placeholder = '请输入您的问题...';
+                addMessage({
+                    main_response: "已切换到中文模式。请用中文提问，我会用中文回答。",
+                    follow_up_questions: Object.keys(chatResponses.zh)
+                });
+            }
+        }
+
+        // 清空聊天记录
+        function clearChat() {
+            const chatMessages = document.getElementById('chatMessages');
+            chatMessages.innerHTML = '';
+            showWelcomeMessage();
+        }
+
+        // 显示欢迎消息
+        function showWelcomeMessage() {
+            if (currentLanguage === 'zh') {
+                addMessage({
+                    main_response: "欢迎使用JCU校园助手！我可以帮您了解：",
+                    follow_up_questions: Object.keys(chatResponses.zh)
+                });
+            } else {
+                addMessage({
+                    main_response: "Welcome to JCU Campus Assistant! I can help you with:",
+                    follow_up_questions: Object.keys(chatResponses.en)
+                });
+            }
+        }
+
+        // 处理后续问题
+        function handleFollowUp(encodedQuestion) {
+            const question = decodeURIComponent(encodedQuestion);
+            document.getElementById('messageInput').value = question;
+            document.getElementById('chatForm').dispatchEvent(new Event('submit'));
+        }
+
+        // 页面加载完成后检查登录状态
+        document.addEventListener('DOMContentLoaded', () => {
+            checkAuth();
+        });
+    </script>
+</head>
+<body>
+    <div class="container">
+        <!-- 登录界面 -->
+        <div id="loginSection" class="auth-section">
+            <div class="auth-container">
+                <h2>登录 | Login</h2>
+                <form id="loginForm" onsubmit="return login(event)">
+                    <div class="mb-3">
+                        <label for="loginStudentId" class="form-label">学号 | Student ID:</label>
+                        <input type="text" class="form-control" id="loginStudentId" 
+                               pattern="[0-9]{8}" 
+                               title="请输入8位数字学号 | Please enter 8-digit student ID" 
+                               oninput="checkStudentIdStatus(this)"
+                               required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="loginPassword" class="form-label">密码 | Password:</label>
+                        <input type="password" class="form-control" id="loginPassword" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">登录 | Login</button>
+                    <div class="mt-3 text-center">
+                        <a href="#" onclick="showRegisterSection()">还没有账号？| Don't have an account?</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- 注册界面 -->
+        <div id="registerSection" class="auth-section d-none">
+            <div class="auth-container">
+                <h2>注册 | Register</h2>
+                <form id="registerForm" onsubmit="return register(event)">
+                    <div class="mb-3">
+                        <label for="registerStudentId" class="form-label">学号 | Student ID:</label>
+                        <input type="text" class="form-control" id="registerStudentId" pattern="[0-9]{8}" title="请输入8位数字学号 | Please enter 8-digit student ID" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="registerEmail" class="form-label">邮箱 | Email:</label>
+                        <input type="email" class="form-control" id="registerEmail" required pattern=".*@my\.jcu\.edu\.au$" title="请使用JCU邮箱 (@my.jcu.edu.au) | Please use JCU email (@my.jcu.edu.au)">
+                    </div>
+                    <div class="mb-3">
+                        <label for="registerPassword" class="form-label">密码 | Password:</label>
+                        <input type="password" class="form-control" id="registerPassword" 
+                               minlength="8"
+                               required title="密码必须包含大小写字母和数字 | Password must contain uppercase, lowercase letters and numbers">
+                    </div>
+                    <div class="mb-3">
+                        <label for="confirmPassword" class="form-label">确认密码 | Confirm Password:</label>
+                        <input type="password" class="form-control" id="confirmPassword" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">注册 | Register</button>
+                    <div class="mt-3 text-center">
+                        <a href="#" onclick="showLoginSection()">已有账号？| Already have an account?</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- 聊天界面 -->
+        <div id="chatSection" class="chat-container d-none">
+            <div class="chat-header">
+                <h1>JCU校园助手 | JCU Campus Assistant</h1>
+                <div class="header-actions">
+                    <button class="btn btn-outline-light btn-sm" id="clearChat" onclick="clearChat()">清空聊天 | Clear Chat</button>
+                    <button class="btn btn-outline-light btn-sm" id="langButton" onclick="toggleLanguage()">English</button>
+                    <button class="btn btn-outline-light btn-sm" onclick="logout()">退出登录 | Logout</button>
+                </div>
+            </div>
+            <div class="chat-messages" id="chatMessages">
+                <!-- 消息将在这里动态添加 -->
+            </div>
+            <div class="chat-input">
+                <form id="chatForm" onsubmit="return sendMessage(event)">
+                    <div class="input-group">
+                        <input type="text" class="form-control" id="messageInput" placeholder="请输入您的问题... | Enter your question..." required>
+                        <button type="submit" class="btn btn-primary">发送 | Send</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html> 
