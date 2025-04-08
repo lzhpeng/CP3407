@@ -377,7 +377,7 @@
                 password: password,
                 createdAt: new Date().toISOString()
             };
-            
+
             saveUser(newUser);
             showError(
                 '注册成功！请登录',
@@ -423,7 +423,7 @@
             event.preventDefault();
             const messageInput = document.getElementById('messageInput');
             const message = messageInput.value.trim();
-            
+
             if (!message) return;
 
             // 显示用户消息
@@ -432,8 +432,8 @@
 
             // 获取回复
             const responses = chatResponses[currentLanguage];
-            let response = responses[message] || (currentLanguage === 'zh' ? 
-                '抱歉，我不太理解您的问题。请尝试从下面的选项中选择：' : 
+            let response = responses[message] || (currentLanguage === 'zh' ?
+                '抱歉，我不太理解您的问题。请尝试从下面的选项中选择：' :
                 'Sorry, I don\'t quite understand. Please try selecting from the options below:');
 
             // 添加机器人回复
@@ -450,18 +450,18 @@
             const chatMessages = document.getElementById('chatMessages');
             const messageDiv = document.createElement('div');
             messageDiv.className = `message ${type}`;
-            
+
             if (typeof message === 'object') {
                 if (message.main_response) {
                     const mainResponseDiv = document.createElement('div');
                     mainResponseDiv.textContent = message.main_response;
                     messageDiv.appendChild(mainResponseDiv);
                 }
-                
+
                 if (message.follow_up_questions && message.follow_up_questions.length > 0) {
                     const followUpDiv = document.createElement('div');
                     followUpDiv.className = 'follow-up';
-                    followUpDiv.innerHTML = message.follow_up_questions.map(q => 
+                    followUpDiv.innerHTML = message.follow_up_questions.map(q =>
                         `<button class="btn btn-link" onclick="handleFollowUp('${encodeURIComponent(q)}')">${escapeHtml(q)}</button>`
                     ).join('<br>');
                     messageDiv.appendChild(followUpDiv);
@@ -469,7 +469,7 @@
             } else {
                 messageDiv.textContent = message;
             }
-            
+
             chatMessages.appendChild(messageDiv);
             chatMessages.scrollTop = chatMessages.scrollHeight;
         }
@@ -488,7 +488,7 @@
         function toggleLanguage() {
             const langButton = document.getElementById('langButton');
             const messageInput = document.getElementById('messageInput');
-            
+
             if (currentLanguage === 'zh') {
                 currentLanguage = 'en';
                 langButton.textContent = '中文';
@@ -604,7 +604,7 @@
                     </div>
                     <div class="mb-3">
                         <label for="registerPassword" class="form-label">密码 | Password:</label>
-                        <input type="password" class="form-control" id="registerPassword" 
+                        <input type="password" class="form-control" id="registerPassword"
                                minlength="8"
                                data-bs-toggle="tooltip"
                                data-bs-placement="top"
