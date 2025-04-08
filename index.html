@@ -208,7 +208,7 @@
                     users = JSON.parse(savedUsers);
                 } else {
                     users = [];
-                    saveUsers(); // 初始化空的用户列表
+                    saveUsers();
                 }
             } catch (error) {
                 console.error('加载用户数据失败:', error);
@@ -224,6 +224,16 @@
             } catch (error) {
                 console.error('保存用户数据失败:', error);
                 alert('保存用户数据失败，请检查浏览器存储空间');
+            }
+        }
+
+        // 重置数据库
+        function resetDatabase() {
+            if (confirm('确定要重置所有用户数据吗？此操作不可恢复！\nAre you sure to reset all user data? This action cannot be undone!')) {
+                users = [];
+                saveUsers();
+                alert('数据已重置！\nData has been reset!');
+                handleLogout();
             }
         }
 
@@ -650,6 +660,7 @@
                     <button class="btn btn-outline-light btn-sm" id="clearChat" onclick="clearChat()">清空聊天 | Clear Chat</button>
                     <button class="btn btn-outline-light btn-sm" id="langButton" onclick="toggleLanguage()">English</button>
                     <button class="btn btn-outline-light btn-sm" onclick="handleLogout()">退出登录 | Logout</button>
+                    <button class="btn btn-danger btn-sm" onclick="resetDatabase()">重置数据 | Reset Data</button>
                 </div>
             </div>
             <div class="chat-messages" id="chatMessages">
