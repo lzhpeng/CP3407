@@ -231,9 +231,15 @@
         // 重置数据库
         function resetDatabase() {
             if (confirm('确定要重置所有用户数据吗？此操作不可恢复！\nAre you sure to reset all user data? This action cannot be undone!')) {
+                // 清除本地存储
+                localStorage.removeItem(USERS_KEY);
+                // 重置用户数组
                 users = [];
+                // 保存空数组到本地存储
                 saveUsers();
-                alert('数据已重置！\nData has been reset!');
+                // 显示成功消息
+                alert('数据已重置！请重新注册账号。\nData has been reset! Please register a new account.');
+                // 返回登录页面
                 handleLogout();
             }
         }
@@ -383,8 +389,10 @@
                 const chatMessages = document.getElementById('chatMessages');
                 chatMessages.innerHTML = '';
                 showChatSection();
+                return false; // 防止表单默认提交
             } else {
                 showError('学号或密码错误', 'Invalid student ID or password');
+                return false; // 防止表单默认提交
             }
         }
 
@@ -432,47 +440,226 @@
             showLoginSection();
         }
 
-        // 模拟聊天回复
-        const chatResponses = {
-            zh: {
-                '校园设施和开放时间': '图书馆开放时间：周一至周五 8:00-22:00\n健身房开放时间：周一至周日 6:00-22:00\n游泳池开放时间：周一至周日 6:00-20:00',
-                '课程和专业信息': '我们提供以下专业：\n- 信息技术\n- 商业管理\n- 护理学\n- 教育学\n详细信息请访问JCU官网',
-                '学生服务和支持': '学生服务中心位于主楼一层，提供以下服务：\n- 学习支持\n- 心理咨询\n- 职业规划\n- 签证咨询',
-                '校历和重要日期': '2024学年重要日期：\n- 开学日：2月26日\n- 期中考试：4月15-26日\n- 期末考试：6月10-21日'
+        // 增强的AI配置
+        const aiConfig = {
+            context: {
+                conversationHistory: [],
+                userPreferences: {
+                    program: '',  // 用户专业
+                    level: '',    // 本科/研究生
+                    interests: [] // 兴趣爱好
+                },
+                currentTime: new Date(),
+                maxHistory: 10
             },
-            en: {
-                'Campus facilities and opening hours': 'Library: Mon-Fri 8:00-22:00\nGym: Mon-Sun 6:00-22:00\nSwimming Pool: Mon-Sun 6:00-20:00',
-                'Courses and program information': 'We offer the following programs:\n- Information Technology\n- Business Management\n- Nursing\n- Education\nFor details, please visit JCU website',
-                'Student services and support': 'Student Service Center (Main Building, 1st Floor) provides:\n- Learning Support\n- Counseling\n- Career Planning\n- Visa Consultation',
-                'Academic calendar and important dates': '2024 Academic Year:\n- Start: Feb 26\n- Mid-term Exams: Apr 15-26\n- Final Exams: Jun 10-21'
+
+            // 智能分析系统
+            analyzer: {
+                // 获取当前时间相关信息
+                getTimeContext() {
+                    const hour = new Date().getHours();
+                    const isWeekend = [0, 6].includes(new Date().getDay());
+                    return {
+                        timeOfDay: hour < 12 ? 'morning' : (hour < 18 ? 'afternoon' : 'evening'),
+                        isWeekend: isWeekend,
+                        isBusinessHours: hour >= 8 && hour < 18 && !isWeekend
+                    };
+                },
+
+                // 分析用户情绪
+                analyzeMood(message) {
+                    const positiveWords = /(开心|高兴|好|happy|great|good|excellent)/i;
+                    const negativeWords = /(难过|伤心|压力|烦恼|sad|stress|worried|anxiety)/i;
+                    const urgentWords = /(急|紧急|马上|立即|urgent|asap|immediately)/i;
+
+                    return {
+                        isPositive: positiveWords.test(message),
+                        isNegative: negativeWords.test(message),
+                        isUrgent: urgentWords.test(message)
+                    };
+                },
+
+                // 提取关键信息
+                extractKeyInfo(message) {
+                    const timePatterns = /(今天|明天|下周|周末|today|tomorrow|next week|weekend)/i;
+                    const locationPatterns = /(在哪|怎么去|位置|where|location|how to get)/i;
+                    const servicePatterns = /(如何|怎么|帮助|how|help|service)/i;
+
+                    return {
+                        hasTimeQuery: timePatterns.test(message),
+                        hasLocationQuery: locationPatterns.test(message),
+                        hasServiceQuery: servicePatterns.test(message)
+                    };
+                }
+            },
+
+            // 智能回复生成
+            responseGenerator: {
+                // 生成情境建议
+                generateContextualSuggestions(category) {
+                    const time = aiConfig.analyzer.getTimeContext();
+                    const suggestions = {
+                        'library': {
+                            morning: '早上图书馆人较少，是学习的好时机 | Library is less crowded in the morning, perfect for studying',
+                            afternoon: '下午图书馆会较拥挤，建议提前预订座位 | Library gets crowded in the afternoon, booking recommended',
+                            evening: '晚上24小时自习室开放 | 24-hour study room is available at night'
+                        },
+                        'transportation': {
+                            morning: '早高峰建议提前出发 | Please allow extra time during morning peak',
+                            afternoon: '午后交通顺畅 | Traffic is smooth in the afternoon',
+                            evening: '晚高峰期间建议使用穿梭巴士 | Shuttle bus recommended during evening peak'
+                        },
+                        'services': {
+                            morning: '早上服务中心人流较少 | Service center is less crowded in the morning',
+                            afternoon: '下午是办理业务高峰期 | Peak hours for services in the afternoon',
+                            evening: '建议使用在线服务 | Online services recommended'
+                        }
+                    };
+                    return suggestions[category]?.[time.timeOfDay] || '';
+                },
+
+                // 生成相关推荐
+                generateRelatedTopics(category) {
+                    const relatedTopics = {
+                        'library': ['自习室预订', '打印服务', '电子资源访问',
+                                  'Study room booking', 'Printing service', 'E-resources access'],
+                        'transportation': ['校车时刻表', '停车信息', '实时交通状况',
+                                         'Shuttle schedule', 'Parking info', 'Real-time traffic'],
+                        'services': ['学生证办理', '成绩单申请', '住宿咨询',
+                                   'Student ID', 'Transcript', 'Accommodation']
+                    };
+                    return relatedTopics[category] || [];
+                }
             }
         };
 
-        // 发送消息
-        async function sendMessage(event) {
-            event.preventDefault();
-            const messageInput = document.getElementById('messageInput');
-            const message = messageInput.value.trim();
+        // 增强的消息处理系统
+        function processMessage(message) {
+            // 保存对话历史
+            aiConfig.context.conversationHistory.push({
+                role: 'user',
+                content: message,
+                timestamp: new Date().getTime()
+            });
 
-            if (!message) return;
+            // 限制历史记录长度
+            if (aiConfig.context.conversationHistory.length > aiConfig.context.maxHistory) {
+                aiConfig.context.conversationHistory.shift();
+            }
 
-            // 显示用户消息
-            addMessage(message, 'user');
-            messageInput.value = '';
+            // 分析用户输入
+            const mood = aiConfig.analyzer.analyzeMood(message);
+            const keyInfo = aiConfig.analyzer.extractKeyInfo(message);
+            const timeContext = aiConfig.analyzer.getTimeContext();
 
-            // 获取回复
-            const responses = chatResponses[currentLanguage];
-            let response = responses[message] || (currentLanguage === 'zh' ?
-                '抱歉，我不太理解您的问题。请尝试从下面的选项中选择：' :
-                'Sorry, I don\'t quite understand. Please try selecting from the options below:');
+            // 获取基础回答
+            let response = analyzeQuestion(message);
 
-            // 添加机器人回复
-            setTimeout(() => {
-                addMessage({
-                    main_response: response,
-                    follow_up_questions: Object.keys(responses)
-                });
-            }, 500);
+            // 如果找到了基础回答，增加情境建议
+            if (response && !response.includes('抱歉')) {
+                const category = determineCategory(message);
+                const contextualSuggestion = aiConfig.responseGenerator.generateContextualSuggestions(category);
+                const relatedTopics = aiConfig.responseGenerator.generateRelatedTopics(category);
+
+                // 组合完整回答
+                if (contextualSuggestion) {
+                    response += '\n\n💡 温馨提示 | Friendly Reminder:\n' + contextualSuggestion;
+                }
+
+                if (relatedTopics.length > 0) {
+                    response += '\n\n📌 您可能还想了解 | You might also want to know:\n' +
+                              relatedTopics.map(topic => '• ' + topic).join('\n');
+                }
+
+                // 如果检测到负面情绪，添加支持性话语
+                if (mood.isNegative) {
+                    response += '\n\n🤗 需要更多帮助吗？我随时在这里！| Need more help? I\'m always here!';
+                }
+
+                // 如果是紧急查询，添加紧急联系方式
+                if (mood.isUrgent) {
+                    response += '\n\n⚡ 紧急联系 | Emergency Contact:\n' +
+                              '电话 | Phone: +65 6709 3888\n' +
+                              '24小时服务热线 | 24/7 Hotline: +65 6709 3999';
+                }
+            }
+
+            return response;
+        }
+
+        // 确定查询类别
+        function determineCategory(message) {
+            const categories = {
+                library: /(图书馆|library|book|study)/i,
+                transportation: /(交通|bus|shuttle|parking)/i,
+                services: /(服务|咨询|service|help|support)/i
+            };
+
+            for (const [category, pattern] of Object.entries(categories)) {
+                if (pattern.test(message)) {
+                    return category;
+                }
+            }
+            return '';
+        }
+
+        // 智能意图分析
+        function analyzeIntent(message) {
+            const normalizedMsg = message.toLowerCase();
+
+            // 首先检查是否是问候语
+            const greetingPatterns = {
+                zh: /(你好|早上好|下午好|晚上好|嗨|哈喽|您好)/,
+                en: /(hi|hello|hey|good morning|good afternoon|good evening)/
+            };
+
+            if (greetingPatterns[currentLanguage].test(normalizedMsg)) {
+                const greetings = {
+                    zh: [
+                        '你好！很高兴见到你！请问有什么我可以帮你的吗？',
+                        '你好啊！今天有什么问题想问我吗？',
+                        '嗨！欢迎来到JCU校园助手，我可以帮你了解：\n- 学术日历信息\n- 交通出行信息\n- 校园设施信息\n- 学生服务信息\n- 近期活动信息'
+                    ],
+                    en: [
+                        'Hello! Nice to meet you! How can I help you today?',
+                        'Hi there! What questions do you have for me?',
+                        'Hey! Welcome to JCU Campus Assistant, I can help you with:\n- Academic Calendar\n- Transportation\n- Campus Facilities\n- Student Services\n- Current Events'
+                    ]
+                };
+                return greetings[currentLanguage][Math.floor(Math.random() * greetings[currentLanguage].length)];
+            }
+
+            // 如果不是通用对话，进行专业问答
+            return analyzeQuestion(message);
+        }
+
+        // 处理通用对话
+        function handleGeneralDialog(intent) {
+            const responses = {
+                greeting: {
+                    zh: ['你好！很高兴见到你！', '嗨！有什么我可以帮你的吗？', '你好啊！今天过得怎么样？'],
+                    en: ['Hello! Nice to meet you!', 'Hi! How can I help you?', 'Hey there! How\'s your day?']
+                },
+                thanks: {
+                    zh: ['不客气！', '很高兴能帮到你！', '随时都可以问我问题哦！'],
+                    en: ['You\'re welcome!', 'Glad I could help!', 'Feel free to ask me anything!']
+                },
+                goodbye: {
+                    zh: ['再见！祝你有愉快的一天！', '下次见！', '随时都可以回来找我聊天哦！'],
+                    en: ['Goodbye! Have a great day!', 'See you next time!', 'Feel free to come back anytime!']
+                },
+                help: {
+                    zh: ['我可以帮你：\n1. 解答JCU相关问题\n2. 提供学习建议\n3. 闲聊解压\n请告诉我你需要什么帮助！'],
+                    en: ['I can help you with:\n1. JCU related questions\n2. Study advice\n3. Casual chat\nJust let me know what you need!']
+                },
+                mood: {
+                    zh: ['希望你心情愉快！我随时在这里陪你聊天。', '分享快乐会加倍，分担烦恼会减半！'],
+                    en: ['Hope you\'re feeling great! I\'m always here to chat.', 'Sharing joy doubles it, sharing worries halves them!']
+                }
+            };
+
+            const responseList = responses[intent][currentLanguage];
+            return responseList[Math.floor(Math.random() * responseList.length)];
         }
 
         // 添加消息到聊天界面
@@ -501,7 +688,7 @@
             }
 
             chatMessages.appendChild(messageDiv);
-            chatMessages.scrollTop = chatMessages.scrollHeight;
+            messageDiv.scrollIntoView({ behavior: 'smooth' });
         }
 
         // HTML转义函数
@@ -514,6 +701,46 @@
                 .replace(/'/g, "&#039;");
         }
 
+        // 升级后的发送消息函数
+        async function sendMessage(event) {
+            event.preventDefault();
+            const messageInput = document.getElementById('messageInput');
+            const message = messageInput.value.trim();
+
+            if (!message) return;
+
+            // 显示用户消息
+            addMessage(message, 'user');
+            messageInput.value = '';
+
+            // 处理消息并获取回复
+            const response = processMessage(message);
+
+            // 添加AI回复
+            setTimeout(() => {
+                if (response.includes('抱歉，我不太理解') || response.includes('Sorry, I don\'t quite understand')) {
+                    addMessage({
+                        main_response: response,
+                        follow_up_questions: currentLanguage === 'zh' ? [
+                            '学术日历信息',
+                            '交通出行信息',
+                            '校园设施信息',
+                            '学生服务信息',
+                            '近期活动信息'
+                        ] : [
+                            'Academic Calendar',
+                            'Transportation',
+                            'Campus Facilities',
+                            'Student Services',
+                            'Current Events'
+                        ]
+                    });
+                } else {
+                    addMessage(response, 'bot');
+                }
+            }, 500);
+        }
+
         // 切换语言
         function toggleLanguage() {
             const langButton = document.getElementById('langButton');
@@ -523,19 +750,78 @@
                 currentLanguage = 'en';
                 langButton.textContent = '中文';
                 messageInput.placeholder = 'Enter your question...';
-                addMessage({
-                    main_response: "Switched to English mode. Please ask in English, I will respond in English.",
-                    follow_up_questions: Object.keys(chatResponses.en)
-                });
+                // 清空聊天记录并显示英文欢迎语
+                const chatMessages = document.getElementById('chatMessages');
+                chatMessages.innerHTML = '';
+                addMessage(
+                    'Hi! I\'m your JCU Campus AI Assistant. I can:\n' +
+                    '• Answer any questions about JCU\n' +
+                    '• Provide study and life advice\n' +
+                    '• Help with technical issues\n' +
+                    '• Engage in casual conversation\n\n' +
+                    'You can ask me about:\n' +
+                    '• Academic Calendar\n' +
+                    '• Transportation\n' +
+                    '• Campus Facilities\n' +
+                    '• Student Services\n' +
+                    '• Current Events\n\n' +
+                    'Feel free to ask me anything!',
+                    'bot'
+                );
             } else {
                 currentLanguage = 'zh';
                 langButton.textContent = 'English';
                 messageInput.placeholder = '请输入您的问题...';
-                addMessage({
-                    main_response: "已切换到中文模式。请用中文提问，我会用中文回答。",
-                    follow_up_questions: Object.keys(chatResponses.zh)
-                });
+                // 清空聊天记录并显示中文欢迎语
+                const chatMessages = document.getElementById('chatMessages');
+                chatMessages.innerHTML = '';
+                addMessage(
+                    '你好！我是你的JCU校园AI助手。我可以：\n' +
+                    '• 回答任何关于JCU的问题\n' +
+                    '• 提供学习和生活建议\n' +
+                    '• 帮助解决技术问题\n' +
+                    '• 进行轻松的日常对话\n\n' +
+                    '你可以问我：\n' +
+                    '• 学术日历信息\n' +
+                    '• 交通出行信息\n' +
+                    '• 校园设施信息\n' +
+                    '• 学生服务信息\n' +
+                    '• 近期活动信息\n\n' +
+                    '请随意问我任何问题！',
+                    'bot'
+                );
             }
+        }
+
+        // 优化的显示欢迎消息函数
+        function showWelcomeMessage() {
+            const welcomeMessage = currentLanguage === 'zh' ?
+                '你好！我是你的JCU校园AI助手。我可以：\n' +
+                '• 回答任何关于JCU的问题\n' +
+                '• 提供学习和生活建议\n' +
+                '• 帮助解决技术问题\n' +
+                '• 进行轻松的日常对话\n\n' +
+                '你可以问我：\n' +
+                '• 学术日历信息\n' +
+                '• 交通出行信息\n' +
+                '• 校园设施信息\n' +
+                '• 学生服务信息\n' +
+                '• 近期活动信息\n\n' +
+                '请随意问我任何问题！' :
+                'Hi! I\'m your JCU Campus AI Assistant. I can:\n' +
+                '• Answer any questions about JCU\n' +
+                '• Provide study and life advice\n' +
+                '• Help with technical issues\n' +
+                '• Engage in casual conversation\n\n' +
+                'You can ask me about:\n' +
+                '• Academic Calendar\n' +
+                '• Transportation\n' +
+                '• Campus Facilities\n' +
+                '• Student Services\n' +
+                '• Current Events\n\n' +
+                'Feel free to ask me anything!';
+
+            addMessage(welcomeMessage, 'bot');
         }
 
         // 清空聊天记录
@@ -545,27 +831,206 @@
             showWelcomeMessage();
         }
 
-        // 显示欢迎消息
-        function showWelcomeMessage() {
-            if (currentLanguage === 'zh') {
-                addMessage({
-                    main_response: "欢迎使用JCU校园助手！我可以帮您了解：",
-                    follow_up_questions: Object.keys(chatResponses.zh)
-                });
-            } else {
-                addMessage({
-                    main_response: "Welcome to JCU Campus Assistant! I can help you with:",
-                    follow_up_questions: Object.keys(chatResponses.en)
-                });
-            }
-        }
-
         // 处理后续问题
         function handleFollowUp(encodedQuestion) {
             const question = decodeURIComponent(encodedQuestion);
+
+            // 直接处理预设类别
+            const categoryResponses = {
+                '学术日历信息': qaData.academic_calendar.academic_year.zh,
+                'Academic Calendar': qaData.academic_calendar.academic_year.en,
+                '交通出行信息': qaData.transportation.to_campus.zh,
+                'Transportation': qaData.transportation.to_campus.en,
+                '校园设施信息': qaData.campus_facilities.library.zh,
+                'Campus Facilities': qaData.campus_facilities.library.en,
+                '学生服务信息': qaData.student_services.student_central.zh,
+                'Student Services': qaData.student_services.student_central.en,
+                '近期活动信息': qaData.current_events.events.zh,
+                'Current Events': qaData.current_events.events.en
+            };
+
+            // 检查是否是预设类别
+            if (categoryResponses[question]) {
+                addMessage(question, 'user');
+                setTimeout(() => {
+                    addMessage(categoryResponses[question], 'bot');
+                }, 500);
+                return;
+            }
+
+            // 如果不是预设类别，按普通问题处理
             document.getElementById('messageInput').value = question;
             document.getElementById('chatForm').dispatchEvent(new Event('submit'));
         }
+
+        const qaData = {
+            'academic_calendar': {
+                'academic_year': {
+                    'zh': '2024学年信息：\n- SP51学期：2月26日 - 6月21日\n- SP52学期：7月22日 - 11月15日\n\n重要日期：\n- O-Week新生周：2月19日-23日\n- 期中考试：4月22日-26日\n- 学习周：6月3日-7日\n- 期末考试：6月10日-21日\n- 假期：6月24日-7月19日',
+                    'en': '2024 Academic Year:\n- SP51 Term: Feb 26 - Jun 21\n- SP52 Term: Jul 22 - Nov 15\n\nKey Dates:\n- O-Week: Feb 19-23\n- Mid-term Exams: Apr 22-26\n- Study Week: Jun 3-7\n- Final Exams: Jun 10-21\n- Break: Jun 24-Jul 19'
+                },
+                'important_dates': {
+                    'zh': '重要日期提醒：\n- 课程添加截止：学期第一周周五\n- 课程退选截止：学期第二周周五\n- Census Date（普查日）：3月22日\n- 退课不计"F"截止：5月17日\n- 成绩公布：7月5日',
+                    'en': 'Important Deadlines:\n- Add Courses: Friday of Week 1\n- Drop Courses: Friday of Week 2\n- Census Date: Mar 22\n- Withdraw without Fail: May 17\n- Results Release: Jul 5'
+                }
+            },
+            'transportation': {
+                'to_campus': {
+                    'zh': '如何到达校园：\n1. 地铁：\n   - 搭乘东西线(EW)到樟宜机场站\n   - 转乘免费校园穿梭巴士\n\n2. 公交：\n   - 9号线: 从樟宜机场/巴西立\n   - 19号线: 从淡滨尼\n   - 89号线: 从樟宜商业园\n\n3. 驾车：\n   - 地址：149 Sims Drive, Singapore 387380\n   - 校内设有收费停车场',
+                    'en': 'Getting to Campus:\n1. MRT:\n   - Take East-West Line (EW) to Changi Airport\n   - Transfer to free campus shuttle\n\n2. Bus:\n   - Bus 9: From Changi Airport/Pasir Ris\n   - Bus 19: From Tampines\n   - Bus 89: From Changi Business Park\n\n3. Driving:\n   - Address: 149 Sims Drive, Singapore 387380\n   - Paid parking available on campus'
+                },
+                'shuttle_bus': {
+                    'zh': '校园穿梭巴士时刻表：\n- 工作日：早上7:30至晚上10:30（每15分钟一班）\n- 周末：早上9:00至晚上6:00（每30分钟一班）\n\n路线：\n- 樟宜机场第2航站楼 → JCU\n- 巴西立地铁站 → JCU',
+                    'en': 'Campus Shuttle Schedule:\n- Weekdays: 7:30 AM to 10:30 PM (every 15 mins)\n- Weekends: 9:00 AM to 6:00 PM (every 30 mins)\n\nRoutes:\n- Changi Airport T2 → JCU\n- Pasir Ris MRT → JCU'
+                }
+            },
+            'campus_facilities': {
+                'library': {
+                    'zh': '图书馆信息：\n位置：Block C Level 2\n\n开放时间：\n- 学期中：周一至周五 8:00-22:00\n  周末 9:00-18:00\n- 假期：周一至周五 9:00-18:00\n  周末关闭\n\n设施：\n- 24小时自习室\n- 讨论室（可在线预订）\n- 打印和扫描服务\n- 电子资源访问',
+                    'en': 'Library Information:\nLocation: Block C Level 2\n\nOpening Hours:\n- Term Time: Mon-Fri 8:00-22:00\n  Weekends 9:00-18:00\n- Holidays: Mon-Fri 9:00-18:00\n  Closed on weekends\n\nFacilities:\n- 24/7 Study Room\n- Discussion Rooms (online booking)\n- Printing & Scanning\n- E-resources Access'
+                }
+            },
+            'student_services': {
+                'student_central': {
+                    'zh': '学生服务中心提供以下服务：\n\n1. 学习支持\n• 一对一辅导\n• 学习技巧工作坊\n• 语言提升课程\n• 图书馆资源使用指导\n\n2. 个人发展\n• 职业规划咨询\n• 简历撰写指导\n• 实习机会推荐\n• 留学就业建议\n\n3. 校园生活\n• 住宿安排协助\n• 社团活动支持\n• 文化适应辅导\n• 心理健康咨询\n\n4. 行政服务\n• 学生证办理\n• 在读证明开具\n• 成绩单申请\n• 学费缴纳咨询\n\n服务时间：\n周一至周五 8:30-17:30\n地点：主教学楼A座一层\n联系方式：+65 6709 3888',
+                    'en': 'Student Services Center provides:\n\n1. Academic Support\n• One-on-one tutoring\n• Study skills workshops\n• Language enhancement\n• Library resource guidance\n\n2. Personal Development\n• Career counseling\n• Resume writing help\n• Internship opportunities\n• Study abroad advice\n\n3. Campus Life\n• Accommodation assistance\n• Club activities support\n• Cultural adaptation\n• Mental health counseling\n\n4. Administrative Services\n• Student ID processing\n• Enrollment verification\n• Transcript requests\n• Tuition payment support\n\nService Hours:\nMon-Fri 8:30-17:30\nLocation: Block A, Level 1\nContact: +65 6709 3888'
+                }
+            },
+            'current_events': {
+                'events': {
+                    'zh': '近期活动：\n1. 校园招聘会\n   - 时间：每周三 14:00-17:00\n   - 地点：中央广场\n\n2. 学术讲座系列\n   - 时间：每周四 15:00-16:30\n   - 地点：讲堂1\n\n3. 文化交流活动\n   - 时间：每月最后一个周五\n   - 地点：学生中心',
+                    'en': 'Current Events:\n1. Campus Job Fair\n   - Time: Every Wed 14:00-17:00\n   - Venue: Central Plaza\n\n2. Academic Seminar Series\n   - Time: Every Thu 15:00-16:30\n   - Venue: Lecture Theatre 1\n\n3. Cultural Exchange\n   - Time: Last Friday of each month\n   - Venue: Student Hub'
+                }
+            },
+            'courses': {
+                'programs': {
+                    'zh': '课程和专业信息：\n\n1. 本科课程\n• 商科类\n  - 工商管理学士\n  - 会计学士\n  - 旅游管理学士\n• 信息技术类\n  - 信息技术学士\n  - 网络安全学士\n  - 数据科学学士\n• 教育类\n  - 教育学士\n  - 幼儿教育学士\n\n2. 研究生课程\n• 商科类\n  - 工商管理硕士(MBA)\n  - 国际贸易硕士\n  - 会计与金融硕士\n• 信息技术类\n  - 信息技术硕士\n  - 数据分析硕士\n• 教育类\n  - 教育学硕士\n  - 教育领导力硕士\n\n3. 研究生项目\n• 博士研究生\n• 硕士研究生\n\n每个课程的具体信息（包括入学要求、学制、学费等）请访问JCU官网或咨询招生办公室。\n\n联系方式：\n电话：+65 6709 3888\n邮箱：admissions-singapore@jcu.edu.au\n地点：招生办公室 (Block A, Level 1)',
+                    'en': 'Course and Program Information:\n\n1. Undergraduate Programs\n• Business\n  - Bachelor of Business\n  - Bachelor of Accounting\n  - Bachelor of Tourism Management\n• Information Technology\n  - Bachelor of IT\n  - Bachelor of Cybersecurity\n  - Bachelor of Data Science\n• Education\n  - Bachelor of Education\n  - Bachelor of Early Childhood Education\n\n2. Postgraduate Programs\n• Business\n  - Master of Business Administration (MBA)\n  - Master of International Trade\n  - Master of Accounting and Finance\n• Information Technology\n  - Master of Information Technology\n  - Master of Data Analytics\n• Education\n  - Master of Education\n  - Master of Educational Leadership\n\n3. Research Programs\n• PhD Programs\n• Master by Research\n\nFor detailed information about each program (including entry requirements, duration, and fees), please visit the JCU website or contact the Admissions Office.\n\nContact Information:\nPhone: +65 6709 3888\nEmail: admissions-singapore@jcu.edu.au\nLocation: Admissions Office (Block A, Level 1)'
+                }
+            }
+        };
+
+        // 升级的智能问答系统
+        function analyzeQuestion(question) {
+            // 移除标点符号，转换为小写
+            const normalizedQuestion = question.toLowerCase().replace(/[.,?!]/g, '');
+
+            // 首先检查是否是问候语
+            const greetingPatterns = {
+                zh: /(你好|早上好|下午好|晚上好|嗨|哈喽|您好)/,
+                en: /(hi|hello|hey|good morning|good afternoon|good evening)/
+            };
+
+            if (greetingPatterns[currentLanguage].test(normalizedQuestion)) {
+                const greetings = {
+                    zh: [
+                        '你好！很高兴见到你！请问有什么我可以帮你的吗？',
+                        '你好啊！今天有什么问题想问我吗？',
+                        '嗨！欢迎来到JCU校园助手，我可以帮你了解：\n- 学术日历信息\n- 交通出行信息\n- 校园设施信息\n- 学生服务信息\n- 近期活动信息'
+                    ],
+                    en: [
+                        'Hello! Nice to meet you! How can I help you today?',
+                        'Hi there! What questions do you have for me?',
+                        'Hey! Welcome to JCU Campus Assistant, I can help you with:\n- Academic Calendar\n- Transportation\n- Campus Facilities\n- Student Services\n- Current Events'
+                    ]
+                };
+                return greetings[currentLanguage][Math.floor(Math.random() * greetings[currentLanguage].length)];
+            }
+
+            // 智能关键词映射
+            const smartKeywords = {
+                // 学期相关
+                '(什么时候|几号|几点)*(开学|放假|考试|学期)': ['academic_calendar', 'academic_year'],
+                '(when|what time|date)*(term|semester|exam|break|study)': ['academic_calendar', 'academic_year'],
+                '(重要|截止|最后)*(日期|时间|期限)': ['academic_calendar', 'important_dates'],
+                '(important|deadline|due|last)*(date|time|day)': ['academic_calendar', 'important_dates'],
+
+                // 交通相关
+                '(怎么|如何)*(去|到|达|找)*学校': ['transportation', 'to_campus'],
+                '(how|where|way)*(to|get|reach|find)*campus': ['transportation', 'to_campus'],
+                '(校车|巴士|班车|shuttle)*(时间|班次|路线)': ['transportation', 'shuttle_bus'],
+                '(shuttle|bus)*(time|schedule|route)': ['transportation', 'shuttle_bus'],
+
+                // 设施相关
+                '图书馆*(时间|开放|位置|在哪)': ['campus_facilities', 'library'],
+                '(library)*(time|open|location|where|hour)': ['campus_facilities', 'library'],
+
+                // 服务相关
+                '(学生服务|学生中心|服务中心|student service)': ['student_services', 'student_central'],
+                '(学习|辅导|工作坊|tutoring|workshop)': ['student_services', 'student_central'],
+                '(职业|简历|实习|career|resume|intern)': ['student_services', 'student_central'],
+                '(住宿|社团|心理|accommodation|club|counseling)': ['student_services', 'student_central'],
+                '(证明|学生证|成绩单|id card|transcript)': ['student_services', 'student_central'],
+
+                // 活动相关
+                '(最近|近期|现在|目前)*(活动|事件|讲座)': ['current_events', 'events'],
+                '(current|recent|upcoming|now)*(event|activity|seminar)': ['current_events', 'events'],
+
+                // 课程相关
+                '(课程|专业|学位|本科|研究生|博士)': ['courses', 'programs'],
+                '(course|program|degree|bachelor|master|phd)': ['courses', 'programs'],
+                '(商科|工商|会计|金融|business|accounting|finance)': ['courses', 'programs'],
+                '(信息技术|计算机|it|computer|technology)': ['courses', 'programs'],
+                '(教育|幼教|education|teaching)': ['courses', 'programs'],
+            };
+
+            // 智能匹配
+            for (const [pattern, [category, subcategory]] of Object.entries(smartKeywords)) {
+                const regex = new RegExp(pattern);
+                if (regex.test(normalizedQuestion)) {
+                    const answer = qaData[category][subcategory];
+                    return currentLanguage === 'zh' ? answer.zh : answer.en;
+                }
+            }
+
+            // 如果没有匹配到，返回智能提示
+            return currentLanguage === 'zh' ?
+                '抱歉，我不太理解您的问题。您可以尝试：\n1. 更具体地描述您的需求\n2. 使用关键词，如"开学时间"、"图书馆位置"等\n3. 选择以下类别：\n- 学术日历\n- 交通信息\n- 校园设施\n- 学生服务\n- 近期活动' :
+                'Sorry, I don\'t quite understand. You can try:\n1. Being more specific\n2. Using keywords like "term dates", "library location"\n3. Choose from these categories:\n- Academic Calendar\n- Transportation\n- Campus Facilities\n- Student Services\n- Current Events';
+        }
+
+        // 添加实时信息更新功能
+        function updateRealTimeInfo() {
+            const now = new Date();
+            const day = now.getDay(); // 0-6, 0是周日
+            const hour = now.getHours();
+            const minute = now.getMinutes();
+
+            // 更新图书馆状态
+            if (day >= 1 && day <= 5) { // 周一到周五
+                if (hour >= 8 && (hour < 22 || (hour === 22 && minute === 0))) {
+                    qaData.campus_facilities.library.status = '开放中 | Open';
+                } else {
+                    qaData.campus_facilities.library.status = '已关闭 | Closed';
+                }
+            } else { // 周末
+                if (hour >= 9 && (hour < 18 || (hour === 18 && minute === 0))) {
+                    qaData.campus_facilities.library.status = '开放中 | Open';
+                } else {
+                    qaData.campus_facilities.library.status = '已关闭 | Closed';
+                }
+            }
+
+            // 更新穿梭巴士状态
+            if (day >= 1 && day <= 5) { // 周一到周五
+                if (hour >= 7 && (hour < 22 || (hour === 22 && minute <= 30))) {
+                    qaData.transportation.shuttle_bus.status = '运行中 | Operating';
+                } else {
+                    qaData.transportation.shuttle_bus.status = '已停运 | Not Operating';
+                }
+            } else { // 周末
+                if (hour >= 9 && (hour < 18 || (hour === 18 && minute === 0))) {
+                    qaData.transportation.shuttle_bus.status = '运行中 | Operating';
+                } else {
+                    qaData.transportation.shuttle_bus.status = '已停运 | Not Operating';
+                }
+            }
+        }
+
+        // 每分钟更新一次实时信息
+        setInterval(updateRealTimeInfo, 60000);
+        // 初始化时也更新一次
+        updateRealTimeInfo();
     </script>
 </head>
 <body>
@@ -574,7 +1039,7 @@
         <div id="loginSection" class="auth-section">
             <div class="auth-container">
                 <h2>登录 | Login</h2>
-                <form id="loginForm" onsubmit="return handleLogin()">
+                <form id="loginForm" onsubmit="handleLogin(); return false;">
                     <div class="mb-3">
                         <label for="loginStudentId" class="form-label">学号 | Student ID:</label>
                         <input type="text" class="form-control" id="loginStudentId"
@@ -673,10 +1138,7 @@
             <div class="chat-input">
                 <form id="chatForm" onsubmit="return sendMessage(event)">
                     <div class="input-group">
-                        <input type="text" class="form-control" id="messageInput" 
-                               data-bs-toggle="tooltip"
-                               data-bs-placement="top"
-                               title="请输入您的问题 | Enter your question"
+                        <input type="text" class="form-control" id="messageInput"
                                required>
                         <button type="submit" class="btn btn-primary">发送 | Send</button>
                     </div>
